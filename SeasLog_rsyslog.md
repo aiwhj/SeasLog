@@ -1,4 +1,4 @@
-### SeasLog 与 rsyslog 配置
+### SeasLog 与 Rsyslog 配置
 
 ### 使用 File
 
@@ -15,7 +15,7 @@ seaslog.default_basepath = "/www/wwwlogs/seaslog"
 seaslog.default_logger = "default"
 ```
 
-2. 修改 rsyslog 配置开启 [imfile](http://www.rsyslog.com/doc/v8-stable/configuration/modules/imfile.html) 输入模块
+2. 修改 Rsyslog 配置开启 [imfile](http://www.rsyslog.com/doc/v8-stable/configuration/modules/imfile.html) 输入模块
 
 ```conf
 #载入 imfile 模块
@@ -37,7 +37,7 @@ SeasLog 中使用 [RFC5424](https://tools.ietf.org/html/rfc5424) 规范远程输
 
 具体使用 TCP 还是 UDP 根据业务需求来定, 下面使用 TCP 为例
 
-1. 服务端: 修改 rsyslog 配置开启 [imtcp](http://www.rsyslog.com/doc/v8-stable/configuration/modules/imtcp.html) 输入模块
+1. 服务端: 修改 Rsyslog 配置开启 [imtcp](http://www.rsyslog.com/doc/v8-stable/configuration/modules/imtcp.html) 输入模块
 
 ```conf
 #载入 imtcp 模块
@@ -47,7 +47,7 @@ module(load="imtcp")
 input(type="imtcp" port="514")
 ```
 
-2. 客户端: 修改 Seaslog 配置使用 File
+2. 客户端: 修改 SeasLog 配置使用 File
 
 ```conf
 ;日志存储介质 1File 2TCP 3UDP (默认为1)
@@ -60,9 +60,9 @@ seaslog.remote_host = "192.168.0.1"
 seaslog.remote_port = 514
 ```
 
-### rsyslog 接收日志
+### Rsyslog 接收日志
 
-1. 在未定义 template() 的时候, rsyslog 会使用默认模板对日志进行格式化
+1. 在未定义 template 的时候, Rsyslog 会使用默认模板对日志进行格式化
 
 例如 rsyslogd 7.6.1 
 
@@ -78,7 +78,7 @@ seaslog.remote_port = 514
 
 `Mar 29 15:52:16 whj-desktop default[32380]:[2018-03-29] | INFO | 32380 | 1522309936.392 | 5abc9b305fe58 | local | /bin/bash | test187.php | seaslog: i am cli test seaslog rsyslog`
 
-更多 rsyslog [properties](http://www.rsyslog.com/doc/v8-stable/configuration/properties.html)
+更多 Rsyslog [properties](http://www.rsyslog.com/doc/v8-stable/configuration/properties.html)
 
 2. 一个自定义的例子
 
@@ -95,7 +95,7 @@ template(name="logformat" type="string" string="app-name: %APP-NAME%\nmsgid: %MS
 :msg,contains,        "seaslog"            ?logfile;logformat
 ```
 
-TCP/UDP 输出, rsyslog 的 rawmsg 原始日志格式为[RFC5424](https://tools.ietf.org/html/rfc5424) 规范 `<{PRI}>1 {time_RFC3339} {host_name} {logger} {process_id} {request_id} {log_message}`
+TCP/UDP 输出, Rsyslog 的 rawmsg 原始日志格式为[RFC5424](https://tools.ietf.org/html/rfc5424) 规范 `<{PRI}>1 {time_RFC3339} {host_name} {logger} {process_id} {request_id} {log_message}`
 
 ```
 app-name: default
@@ -104,7 +104,7 @@ msg: 2018-04-03 10:44:59 | INFO | 26291 | 1522723499.408 | 5ac2eaab63c57 | local
 rawmsg: <14>1 2018-04-03T10:44:59+08:00 whj-desktop default 26291 5ac2eaab63c57 2018-04-03 10:44:59 | INFO | 26291 | 1522723499.408 | 5ac2eaab63c57 | local | /bin/bash | test187.php | i am cli test seaslog rsyslog
 ```
 
-File 输出, rsyslog 采集到的日志格式是 `seaslog.default_template`
+File 输出, Rsyslog 采集到的日志格式是 `seaslog.default_template`
 
 ```
 app-name: tag1
