@@ -1,5 +1,7 @@
 ### SeasLog 与 Rsyslog 配置
 
+本文统一 SeasLog 模板为 `seaslog.default_template = "%T | %M"`
+
 ### 使用 File
 
 1. 修改 SeasLog 配置为 File 输出
@@ -33,7 +35,7 @@ input(type="imfile"
 
 SeasLog 中使用 [RFC5424](https://tools.ietf.org/html/rfc5424) 规范远程输出日志
 
-输出日志格式为 `<{PRI}>1 {time_RFC3339} {host_name} {logger} {process_id} {request_id} {log_message}`
+输出日志格式为 `<{PRI}>1 {time_RFC3339} {host_name} {domain_port} {process_id} {logger} {log_message}`
 
 具体使用 TCP 还是 UDP 根据业务需求来定, 下面使用 TCP 为例
 
@@ -66,17 +68,17 @@ seaslog.remote_port = 514
 
 例如 rsyslogd 7.6.1 
 
-默认模板是: `RSYSLOG_TraditionalFileFormat`
+默认模板是: [`RSYSLOG_TraditionalFileFormat`](https://www.rsyslog.com/doc/v8-stable/configuration/templates.html)
 
 定义: `$template TraditionalFileFormat,"%TIMESTAMP% %HOSTNAME% %syslogtag%%msg:::sp-if-no-1st-sp%%msg:::drop-last-lf%\n" `
 
 %rawmsg% 是
 
-`<14>1 2018-03-29T16:09:39+08:00 whj-desktop default[24165]: 2018-03-29 16:09:39 | INFO | 24165 | 1522310979.132 | 5abc9f432068e | local | /bin/bash | test187.php | seaslog: i am cli test seaslog rsysl`
+`<14>1 2018-04-04T18:02:04+08:00 whj-desktop cli 30479 default 2018-04-04 18:02:04 | i am cli test seaslog rsyslog`
 
 %msg% 是
 
-`Mar 29 15:52:16 whj-desktop default[32380]:[2018-03-29] | INFO | 32380 | 1522309936.392 | 5abc9b305fe58 | local | /bin/bash | test187.php | seaslog: i am cli test seaslog rsyslog`
+`Apr  4 18:08:10 whj-desktop cli[4518] 2018-04-04 18:08:10 | i am cli test seaslog rsyslog`
 
 更多 Rsyslog [properties](http://www.rsyslog.com/doc/v8-stable/configuration/properties.html)
 
@@ -95,13 +97,13 @@ template(name="logformat" type="string" string="app-name: %APP-NAME%\nmsgid: %MS
 :msg,contains,        "seaslog"            ?logfile;logformat
 ```
 
-TCP/UDP 输出, Rsyslog 的 rawmsg 原始日志格式为[RFC5424](https://tools.ietf.org/html/rfc5424) 规范 `<{PRI}>1 {time_RFC3339} {host_name} {logger} {process_id} {request_id} {log_message}`
+TCP/UDP 输出, Rsyslog 的 rawmsg 原始日志格式为[RFC5424](https://tools.ietf.org/html/rfc5424) 规范 `<{PRI}>1 {time_RFC3339} {host_name} {domain_port} {process_id} {logger} {log_message}`
 
 ```
-app-name: default
-msgid: 5ac2eaab63c57 
-msg: 2018-04-03 10:44:59 | INFO | 26291 | 1522723499.408 | 5ac2eaab63c57 | local | /bin/bash | test187.php | i am cli test seaslog rsyslog 
-rawmsg: <14>1 2018-04-03T10:44:59+08:00 whj-desktop default 26291 5ac2eaab63c57 2018-04-03 10:44:59 | INFO | 26291 | 1522723499.408 | 5ac2eaab63c57 | local | /bin/bash | test187.php | i am cli test seaslog rsyslog
+app-name: cli
+msgid: default 
+msg: 2018-04-04 18:02:09 | i am cli test seaslog rsyslog 
+rawmsg: <14>1 2018-04-04T18:02:09+08:00 whj-desktop cli 30551 default 2018-04-04 18:02:09 | i am cli test seaslog rsyslog
 ```
 
 File 输出, Rsyslog 采集到的日志格式是 `seaslog.default_template`
@@ -109,8 +111,8 @@ File 输出, Rsyslog 采集到的日志格式是 `seaslog.default_template`
 ```
 app-name: tag1
 msgid: - 
-msg: 2018-04-03 10:48:24 | INFO | 29450 | 1522723704.110 | 5ac2eb781afb0 | local | /bin/bash | test187.php | i am cli test seaslog rsyslog 
-rawmsg: 2018-04-03 10:48:24 | INFO | 29450 | 1522723704.110 | 5ac2eb781afb0 | local | /bin/bash | test187.php | i am cli test seaslog rsyslog
+msg: 2018-04-04 18:05:44 | i am cli test seaslog rsyslog 
+rawmsg: 2018-04-04 18:05:44 | i am cli test seaslog rsyslog 
 ```
 
 
