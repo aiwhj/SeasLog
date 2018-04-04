@@ -3,7 +3,7 @@
 日志处理过程一般是 `输出日志 -> 收集日志 -> 分析日志 -> 存储 -> 后台管理`
 
 本文将使用:
-
+```
 输出日志: SeasLog
 
 收集日志: Rsyslog, Filebeat, Logstash
@@ -11,8 +11,8 @@
 分析日志: Rsyslog, Logstash
 
 存储日志: Elasticsearch
-
-两两可随意搭配结合
+```
+可随意搭配结合
 
 ### SeasLog 与 Rsyslog 配置
 
