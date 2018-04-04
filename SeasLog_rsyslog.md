@@ -1,8 +1,24 @@
+## SeasLog 日志收集
+
+日志处理过程一般是 `输出日志 -> 收集日志 -> 分析日志 -> 存储 -> 后台管理`
+
+本文将使用:
+
+输出日志: SeasLog
+
+收集日志: Rsyslog, Filebeat, Logstash
+
+分析日志: Rsyslog, Logstash
+
+存储日志: Elasticsearch
+
+两两可随意搭配结合
+
 ### SeasLog 与 Rsyslog 配置
 
 本文统一 SeasLog 模板为 `seaslog.default_template = "%T | %M"`
 
-### 使用 File
+#### 使用 File
 
 1. 修改 SeasLog 配置为 File 输出
 
@@ -31,7 +47,7 @@ input(type="imfile"
     Facility="local7")
 ```
 
-### 使用 TCP/UDP
+#### 使用 TCP/UDP
 
 SeasLog 中使用 [RFC5424](https://tools.ietf.org/html/rfc5424) 规范远程输出日志
 
@@ -62,7 +78,7 @@ seaslog.remote_host = "192.168.0.1"
 seaslog.remote_port = 514
 ```
 
-### Rsyslog 接收日志
+#### Rsyslog 接收日志
 
 1. 在未定义 template 的时候, Rsyslog 会使用默认模板对日志进行格式化
 
