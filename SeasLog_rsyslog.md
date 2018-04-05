@@ -1,6 +1,6 @@
 ## SeasLog 日志收集
 
-日志处理过程一般是 `输出日志 -> 收集日志 -> 分析日志 -> 存储 -> 后台管理`
+日志处理过程一般是 `输出日志 -> 收集日志 -> 分析日志 -> 存储日志 -> 后台管理`
 
 本文将使用:
 ```
@@ -12,13 +12,13 @@
 
 存储日志: Elasticsearch
 ```
-可随意搭配结合
+可自由搭配结合
 
-### SeasLog 与 Rsyslog 配置
+### SeasLog 输出日志到 Rsyslog
 
 本文统一 SeasLog 模板为 `seaslog.default_template = "%T | %M"`
 
-#### 使用 File
+#### 1. 使用 File
 
 1. 修改 SeasLog 配置为 File 输出
 
@@ -47,7 +47,7 @@ input(type="imfile"
     Facility="local7")
 ```
 
-#### 使用 TCP/UDP
+#### 2. 使用 TCP/UDP
 
 SeasLog 中使用 [RFC5424](https://tools.ietf.org/html/rfc5424) 规范远程输出日志
 
@@ -65,7 +65,7 @@ module(load="imtcp")
 input(type="imtcp" port="514")
 ```
 
-2. 客户端: 修改 SeasLog 配置使用 File
+2. 客户端: 修改 SeasLog 配置使用 TCP
 
 ```conf
 ;日志存储介质 1File 2TCP 3UDP (默认为1)
@@ -78,9 +78,9 @@ seaslog.remote_host = "192.168.0.1"
 seaslog.remote_port = 514
 ```
 
-#### Rsyslog 接收日志
+### Rsyslog 处理日志
 
-1. 在未定义 template 的时候, Rsyslog 会使用默认模板对日志进行格式化
+#### 1. 在未定义 template 的时候, Rsyslog 会使用默认模板对日志进行格式化
 
 例如 rsyslogd 7.6.1 
 
@@ -98,7 +98,7 @@ seaslog.remote_port = 514
 
 更多 Rsyslog [properties](http://www.rsyslog.com/doc/v8-stable/configuration/properties.html)
 
-2. 一个自定义的例子
+#### 2. Rsyslog 输出到文件
 
 配置 [template](http://www.rsyslog.com/doc/v8-stable/configuration/templates.html)
 
@@ -132,3 +132,70 @@ rawmsg: 2018-04-04 18:05:44 | i am cli test seaslog rsyslog
 ```
 
 
+#### 3. Rsyslog 输出到 Logstash 和 elasticsearch
+
+配置 Logstash 的 input 为 syslog, 端口 5555
+
+```conf
+input {
+    syslog {
+        type => "rsyslog"
+        port => "5555"
+    }
+}
+```
+配置 Logstash 的 output 到 elasticsearch
+
+```conf
+output{
+    if [type] == "rsyslog" {
+        elasticsearch {
+            hosts => ["127.0.0.1:9200"] 
+            index => "rsyslog-%{+YYYY.MM.dd}"
+        }
+    }
+}
+```
+将 Rsyslog 日志重定向到 Logstash
+
+```conf
+:msg,contains 'seaslog' @@172.17.0.2:5555
+```
+
+### 使用 Filebeat 收集日志
+收集 `/var/log/seaslog_*.log` 的日志并输出到 logstash
+
+```yml
+- type: log
+  enabled: true
+  paths:
+    - /var/log/seaslog_*.log
+output.logstash:
+  hosts: ["localhost:5044"]
+  ssl.certificate_authorities: ["/home/whj/logstash-beats.crt"]
+```
+配置 logstash 的 input 为 beats
+```conf
+input {
+  beats {
+    port => 5044
+    ssl => true
+    ssl_certificate => "/etc/pki/tls/certs/logstash-beats.crt"
+    ssl_key => "/etc/pki/tls/private/logstash-beats.key"
+  }
+}
+```
+### 直接 SeasLog TCP 输出到 logstash
+
+客户端: 修改 SeasLog 配置使用 TCP
+
+```conf
+;日志存储介质 1File 2TCP 3UDP (默认为1)
+seaslog.appender = 2
+
+;接收ip 默认127.0.0.1 (当使用TCP或UDP时必填)
+seaslog.remote_host = "127.0.0.1"
+
+;接收端口 默认514 (当使用TCP或UDP时必填)
+seaslog.remote_port = 5555
+```
