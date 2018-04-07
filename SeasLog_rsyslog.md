@@ -134,21 +134,33 @@ rawmsg: 2018-04-04 18:05:44 | i am cli test seaslog rsyslog
 
 #### 3. Rsyslog 输出到 Logstash 和 elasticsearch
 
-配置 Logstash 的 input 为 syslog, 端口 5555
+1. 配置 Logstash 的 input 为 tcp, 端口 5555
 
 ```conf
 input {
-    syslog {
-        type => "rsyslog"
+    tcp {
+        type => "seaslog"
         port => "5555"
     }
 }
 ```
-配置 Logstash 的 output 到 elasticsearch
+
+2. 设置 Rsyslog 的 filter 识别 RFC5424, [grokdebug](http://grokdebug.herokuapp.com/)
+
+```
+filter {
+  if [type] == "seaslog" {
+    grok {
+      match => { "message" => "%{SYSLOG5424PRI}%{NONNEGINT:syslog5424_ver} +(?:%{TIMESTAMP_ISO8601:syslog5424_ts}|-) +(?:%{HOSTNAME:syslog5424_host}|-) +(?:%{NOTSPACE:syslog5424_app}|-) +(?:%{NOTSPACE:syslog5424_proc}|-) +(?:%{WORD:syslog5424_msgid}|-) +%{GREEDYDATA:syslog5424_msg}" }
+    }
+  }
+}
+```
+3. 配置 Logstash 的 output 到 elasticsearch
 
 ```conf
 output{
-    if [type] == "rsyslog" {
+    if [type] == "seaslog" {
         elasticsearch {
             hosts => ["127.0.0.1:9200"] 
             index => "rsyslog-%{+YYYY.MM.dd}"
@@ -156,12 +168,33 @@ output{
     }
 }
 ```
-将 Rsyslog 日志重定向到 Logstash
+4. 将 Rsyslog 日志重定向到 Logstash
 
 ```conf
 :msg,contains 'seaslog' @@172.17.0.2:5555
 ```
 
+5. Rsyslog 会将接收到的 msg 经过 filter 过滤发送如下格式数据到 elasticsearch 储存
+
+```json
+{
+      "syslog5424_pri" => "14",
+       "syslog5424_ts" => "2018-04-07T12:07:37+08:00",
+     "syslog5424_proc" => "21641",
+                "port" => 54292,
+             "message" => "<14>1 2018-04-07T12:07:37+08:00 whj-mint cli 21641 default 2018-04-07 12:07:37 | i am cli test seaslog rsyslog",
+      "syslog5424_msg" => "2018-04-07 12:07:37 | i am cli test seaslog rsyslog",
+     "syslog5424_host" => "whj-mint",
+      "syslog5424_ver" => "1",
+      "syslog5424_app" => "cli",
+            "@version" => "1",
+          "@timestamp" => 2018-04-07T04:07:37.479Z,
+                "host" => "localhost",
+    "syslog5424_msgid" => "default",
+                "type" => "seaslog"
+}
+
+```
 ### 使用 Filebeat 收集日志
 收集 `/var/log/seaslog_*.log` 的日志并输出到 logstash
 
