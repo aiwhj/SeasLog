@@ -176,7 +176,7 @@ output{
 
 5. Rsyslog 会将接收到的 msg 经过 filter 过滤发送如下格式数据到 elasticsearch 储存
 
-```json
+```conf
 {
       "syslog5424_pri" => "14",
        "syslog5424_ts" => "2018-04-07T12:07:37+08:00",
