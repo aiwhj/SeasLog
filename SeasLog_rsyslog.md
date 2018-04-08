@@ -16,7 +16,7 @@
 
 ### SeasLog 输出日志到 Rsyslog
 
-本文统一 SeasLog 模板为 `seaslog.default_template = "%T | %M"`
+本文统一 SeasLog 模板为 `seaslog.default_template = "%T | %L | %P | %Q | %t | %M"`
 
 #### 1. 使用 File
 
@@ -27,7 +27,7 @@
 seaslog.appender = 1
 
 ;默认log根目录
-seaslog.default_basepath = "/www/wwwlogs/seaslog"
+seaslog.default_basepath = "/var/log/www"
 
 ;默认logger目录
 seaslog.default_logger = "default"
@@ -39,9 +39,9 @@ seaslog.default_logger = "default"
 #载入 imfile 模块
 module(load="imfile" PollingInterval="10")
 
-#使用 imfile 模块监听 `/www/wwwlogs/seaslog/default/` 文件夹下 .log 文件
+#使用 imfile 模块监听 `/var/log/www/default/` 文件夹下 .log 文件
 input(type="imfile"
-    File="/www/wwwlogs/seaslog/default/*.log"
+    File="/var/log/www/default/*.log"
     Tag="tag1"
     Severity="error"
     Facility="local7")
@@ -72,7 +72,7 @@ input(type="imtcp" port="514")
 seaslog.appender = 2
 
 ;接收ip 默认127.0.0.1 (当使用TCP或UDP时必填)
-seaslog.remote_host = "192.168.0.1"
+seaslog.remote_host = "192.168.0.2"
 
 ;接收端口 默认514 (当使用TCP或UDP时必填)
 seaslog.remote_port = 514
@@ -82,7 +82,7 @@ seaslog.remote_port = 514
 
 #### 1. 在未定义 template 的时候, Rsyslog 会使用默认模板对日志进行格式化
 
-例如 rsyslogd 7.6.1 
+例如 rsyslogd 8.16.0
 
 默认模板是: [`RSYSLOG_TraditionalFileFormat`](https://www.rsyslog.com/doc/v8-stable/configuration/templates.html)
 
@@ -90,11 +90,11 @@ seaslog.remote_port = 514
 
 %rawmsg% 是
 
-`<14>1 2018-04-04T18:02:04+08:00 whj-desktop cli 30479 default 2018-04-04 18:02:04 | i am cli test seaslog rsyslog`
+`<14>1 2018-04-08T10:25:02+08:00 whj-desktop cli 6838 default 2018-04-08 10:25:02 | INFO | 6838 | 5ac97d7e0df1b | 1523154302.57 | i am cli test seaslog rsyslog`
 
 %msg% 是
 
-`Apr  4 18:08:10 whj-desktop cli[4518] 2018-04-04 18:08:10 | i am cli test seaslog rsyslog`
+`Apr  8 10:23:40 whj-desktop cli[5551] 2018-04-08 10:23:40 | INFO | 5551 | 5ac97d2c6cf06 | 1523154220.446 | i am cli test seaslog rsyslog`
 
 更多 Rsyslog [properties](http://www.rsyslog.com/doc/v8-stable/configuration/properties.html)
 
@@ -115,20 +115,20 @@ template(name="logformat" type="string" string="app-name: %APP-NAME%\nmsgid: %MS
 
 TCP/UDP 输出, Rsyslog 的 rawmsg 原始日志格式为[RFC5424](https://tools.ietf.org/html/rfc5424) 规范 `<{PRI}>1 {time_RFC3339} {host_name} {domain_port} {process_id} {logger} {log_message}`
 
-```
+```conf
 app-name: cli
 msgid: default 
-msg: 2018-04-04 18:02:09 | i am cli test seaslog rsyslog 
-rawmsg: <14>1 2018-04-04T18:02:09+08:00 whj-desktop cli 30551 default 2018-04-04 18:02:09 | i am cli test seaslog rsyslog
+msg: 2018-04-08 10:22:19 | INFO | 3748 | 5ac97cdba4926 | 1523154139.674 | i am cli test seaslog rsyslog 
+rawmsg: <14>1 2018-04-08T10:22:19+08:00 whj-desktop cli 3748 default 2018-04-08 10:22:19 | INFO | 3748 | 5ac97cdba4926 | 1523154139.674 | i am cli test seaslog rsyslog 
 ```
 
 File 输出, Rsyslog 采集到的日志格式是 `seaslog.default_template`
 
-```
+```conf
 app-name: tag1
 msgid: - 
-msg: 2018-04-04 18:05:44 | i am cli test seaslog rsyslog 
-rawmsg: 2018-04-04 18:05:44 | i am cli test seaslog rsyslog 
+msg: 2018-04-08 10:34:14 | INFO | 15597 | 5ac97fa6330a9 | 1523154854.209 | i am cli test seaslog rsyslog 
+rawmsg: 2018-04-08 10:34:14 | INFO | 15597 | 5ac97fa6330a9 | 1523154854.209 | i am cli test seaslog rsyslog 
 ```
 
 
@@ -171,27 +171,27 @@ output{
 4. 将 Rsyslog 日志重定向到 Logstash
 
 ```conf
-:msg,contains 'seaslog' @@172.17.0.2:5555
+:msg,contains 'seaslog' @@192.168.0.2:5555
 ```
 
 5. Rsyslog 会将接收到的 msg 经过 filter 过滤发送如下格式数据到 elasticsearch 储存
 
 ```conf
 {
-      "syslog5424_pri" => "14",
-       "syslog5424_ts" => "2018-04-07T12:07:37+08:00",
-     "syslog5424_proc" => "21641",
-                "port" => 54292,
-             "message" => "<14>1 2018-04-07T12:07:37+08:00 whj-mint cli 21641 default 2018-04-07 12:07:37 | i am cli test seaslog rsyslog",
-      "syslog5424_msg" => "2018-04-07 12:07:37 | i am cli test seaslog rsyslog",
-     "syslog5424_host" => "whj-mint",
       "syslog5424_ver" => "1",
+             "message" => "<14>1 2018-04-08T10:13:24+08:00 whj-desktop cli 27431 default 2018-04-08 10:13:24 | INFO | 27431 | 5ac97ac483522 | 1523153604.538 | i am cli test seaslog rsyslog",
+                "type" => "seaslog",
       "syslog5424_app" => "cli",
-            "@version" => "1",
-          "@timestamp" => 2018-04-07T04:07:37.479Z,
-                "host" => "localhost",
+      "syslog5424_msg" => "2018-04-08 10:13:24 | INFO | 27431 | 5ac97ac483522 | 1523153604.538 | i am cli test seaslog rsyslog",
+     "syslog5424_proc" => "27431",
     "syslog5424_msgid" => "default",
-                "type" => "seaslog"
+          "@timestamp" => 2018-04-08T02:13:24.545Z,
+                "port" => 33850,
+       "syslog5424_ts" => "2018-04-08T10:13:24+08:00",
+      "syslog5424_pri" => "14",
+            "@version" => "1",
+                "host" => "127.0.0.1",
+     "syslog5424_host" => "whj-desktop"
 }
 
 ```
@@ -227,7 +227,7 @@ input {
 seaslog.appender = 2
 
 ;接收ip 默认127.0.0.1 (当使用TCP或UDP时必填)
-seaslog.remote_host = "127.0.0.1"
+seaslog.remote_host = "192.168.0.2"
 
 ;接收端口 默认514 (当使用TCP或UDP时必填)
 seaslog.remote_port = 5555
