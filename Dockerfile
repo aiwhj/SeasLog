@@ -1,5 +1,5 @@
 FROM php:5.6-apache
-COPY * /usr/src/SeasLog/
+COPY . /usr/src/SeasLog/
 COPY config/php.ini /usr/local/etc/php/
 COPY tests/ /var/www/html/
 RUN cd /usr/src/SeasLog/ \
