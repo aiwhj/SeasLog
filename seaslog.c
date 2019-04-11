@@ -43,6 +43,8 @@ const zend_function_entry seaslog_functions[] =
 {
     PHP_FE(seaslog_get_version, NULL)
     PHP_FE(seaslog_get_author,  NULL)
+    PHP_FE(seaslogTraceInit, NULL)
+    PHP_FE(seaslogTraceDone, NULL)
     {
         NULL, NULL, NULL
     }
@@ -541,6 +543,24 @@ PHP_FUNCTION(seaslog_get_version)
     SEASLOG_RETURN_STRINGL(SEASLOG_VERSION, strlen(SEASLOG_VERSION));
 }
 /* }}} */
+
+PHP_FUNCTION(seaslogTraceInit)
+{
+    if (!SEASLOG_G(trace_performance)) {
+        SEASLOG_G(trace_performance) = 1;
+        initZendHooks(TSRMLS_C);
+        seaslog_rinit_performance(TSRMLS_C);
+    }
+}
+
+PHP_FUNCTION(seaslogTraceDone)
+{
+    if (SEASLOG_G(trace_performance)) {
+        seaslog_clear_performance(seaslog_ce TSRMLS_CC);
+        recoveryZendHooks(TSRMLS_C);
+        SEASLOG_G(trace_performance) = 0;
+    }
+}
 
 /* {{{ proto string seaslog_get_author()
    Return SeasLog author */

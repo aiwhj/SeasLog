@@ -157,6 +157,8 @@ PHP_MINFO_FUNCTION(seaslog);
 
 PHP_FUNCTION(seaslog_get_version);
 PHP_FUNCTION(seaslog_get_author);
+PHP_FUNCTION(seaslogTraceInit);
+PHP_FUNCTION(seaslogTraceDone);
 
 extern zend_class_entry *seaslog_ce;
 PHP_METHOD(SEASLOG_RES_NAME, __construct);

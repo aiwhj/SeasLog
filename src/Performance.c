@@ -540,7 +540,7 @@ char* seaslog_performance_get_function_name(zend_execute_data *data TSRMLS_DC)
     curr_func = data->function_state.function;
 #endif
 
-    if (!curr_func->common.function_name || ZEND_USER_FUNCTION != curr_func->common.type)
+    if (!curr_func->common.function_name)
     {
         return NULL;
     }
